@@ -5475,6 +5475,12 @@ public final class Settings {
          */
         public static final String NETWORK_TRAFFIC_MODE = "network_traffic_mode";
 
+	/**
+         * Home wake button
+         * @hide
+         */
+        public static final String HOME_WAKE_BUTTON = "home_wake_button";
+
         /**
          * Whether to hide navbar pill and keyboard space.
          * Default 0.
