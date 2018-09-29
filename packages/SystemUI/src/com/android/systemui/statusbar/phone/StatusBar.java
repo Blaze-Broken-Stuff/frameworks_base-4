@@ -997,18 +997,6 @@ public class StatusBar extends SystemUI implements
         mTunerService.addTunable(this, NOTIFICATION_MATERIAL_DISMISS_STYLE);
         mTunerService.addTunable(this, NOTIFICATION_MATERIAL_DISMISS_BGSTYLE);
 
-        mNeedsNavigationBar = mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_showNavigationBar);
-
-        // Allow a system property to override this. Used by the emulator.
-        // See also hasNavigationBar().
-        String navBarOverride = SystemProperties.get("qemu.hw.mainkeys");
-        if ("1".equals(navBarOverride)) {
-            mNeedsNavigationBar = false;
-        } else if ("0".equals(navBarOverride)) {
-            mNeedsNavigationBar = true;
-        }
-
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         mDreamManager = IDreamManager.Stub.asInterface(
                 ServiceManager.checkService(DreamService.DREAM_SERVICE));
@@ -4082,7 +4070,6 @@ public class StatusBar extends SystemUI implements
 
     protected NavigationBarController mNavigationBarController;
     private NavigationBarController.SystemUiVisibility mNavigationBarSystemUiVisibility;
-    private boolean mNeedsNavigationBar;
 
     private final AccessibilityFloatingMenuController mAccessibilityFloatingMenuController;
 
@@ -4178,7 +4165,7 @@ public class StatusBar extends SystemUI implements
 
     private void updateNavigationBarVisibility() {
         if (mDisplayId == Display.DEFAULT_DISPLAY && mWindowManagerService != null) {
-            boolean forcedVisibility = mNeedsNavigationBar || Settings.System.getIntForUser(
+            boolean forcedVisibility = Settings.System.getIntForUser(
                 mContext.getContentResolver(), Settings.System.FORCE_SHOW_NAVBAR,
                  0, UserHandle.USER_CURRENT) == 1;
             boolean hasNavbar = getNavigationBarView() != null;
