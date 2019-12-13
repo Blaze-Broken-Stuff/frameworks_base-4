@@ -76,6 +76,7 @@ import com.android.systemui.navigationbar.buttons.ContextualButton;
 import com.android.systemui.navigationbar.buttons.ContextualButtonGroup;
 import com.android.systemui.navigationbar.buttons.DeadZone;
 import com.android.systemui.navigationbar.buttons.KeyButtonDrawable;
+import com.android.systemui.navigationbar.buttons.KeyButtonView;
 import com.android.systemui.navigationbar.buttons.NearestTouchFrame;
 import com.android.systemui.navigationbar.buttons.RotationContextButton;
 import com.android.systemui.navigationbar.gestural.EdgeBackGestureHandler;
@@ -138,6 +139,9 @@ public class NavigationBarView extends FrameLayout implements
     private KeyButtonDrawable mHomeDefaultIcon;
     private KeyButtonDrawable mRecentIcon;
     private KeyButtonDrawable mDockedIcon;
+    private KeyButtonDrawable mArrowLeftIcon;
+    private KeyButtonDrawable mArrowRightIcon;
+
     private Context mLightContext;
     private int mLightIconColor;
     private int mDarkIconColor;
@@ -587,6 +591,10 @@ public class NavigationBarView extends FrameLayout implements
         return mOverviewProxyService.shouldShowSwipeUpUI() && isOverviewEnabled();
     }
 
+    public KeyButtonView getKeyButtonViewById(int id) {
+          return (KeyButtonView) getCurrentView().findViewById(id);
+    }
+
     private void reloadNavIcons() {
         updateIcons(Configuration.EMPTY);
     }
@@ -607,6 +615,9 @@ public class NavigationBarView extends FrameLayout implements
         if (orientationChange || densityChange || dirChange) {
             mBackIcon = getBackDrawable();
         }
+
+        mArrowLeftIcon = getDrawable(R.drawable.ic_navbar_chevron_left);
+        mArrowRightIcon = getDrawable(R.drawable.ic_navbar_chevron_right);
     }
 
     /**
@@ -740,6 +751,7 @@ public class NavigationBarView extends FrameLayout implements
         }
         mImeVisible = visible;
         mRotationButtonController.getRotationButton().setCanShowRotationButton(!mImeVisible);
+        mFloatingRotationButton.setCanShowRotationButton(!mImeVisible);
         if (mNavBarOverlayController.isNavigationBarOverlayEnabled()) {
             mNavBarOverlayController.setCanShow(!mImeVisible);
         }
@@ -778,6 +790,13 @@ public class NavigationBarView extends FrameLayout implements
 
         updateRecentsIcon();
 
+        // Update arrow buttons
+        if (showDpadArrowKeys()) {
+            getKeyButtonViewById(R.id.dpad_left).setImageDrawable(mArrowLeftIcon);
+            getKeyButtonViewById(R.id.dpad_right).setImageDrawable(mArrowRightIcon);
+            updateDpadKeys();
+        }
+
         final boolean mShowIMESpace = getShowIMESpace();
         boolean showCursorKeys = mShowCursorKeys
                 && (mNavigationIconHints & StatusBarManager.NAVIGATION_HINT_BACK_ALT) != 0;
@@ -792,6 +811,11 @@ public class NavigationBarView extends FrameLayout implements
         // Update IME button visibility, a11y and rotate button always overrides the appearance
         mContextualButtonGroup.setButtonVisibility(R.id.ime_switcher,
                 (mNavigationIconHints & StatusBarManager.NAVIGATION_HINT_IME_SHOWN) != 0);
+
+        // right arrow overrules ime in 3 button mode cause there is not enough space
+        if (QuickStepContract.isLegacyMode(mNavBarMode) && showDpadArrowKeys()) {
+            mContextualButtonGroup.setButtonVisibility(R.id.ime_switcher, false);
+        }
 
         mBarTransitions.reapplyDarkIntensity();
 
@@ -1523,5 +1547,25 @@ public class NavigationBarView extends FrameLayout implements
         return Settings.System.getIntForUser(mContext.getContentResolver(),
                 Settings.System.NAVIGATION_BAR_IME_SPACE, 1,
                 UserHandle.USER_CURRENT) == 1;
+    }
+
+    private void updateDpadKeys() {
+        final int visibility = showDpadArrowKeys() && (mNavigationIconHints
+                & StatusBarManager.NAVIGATION_HINT_BACK_ALT) != 0 ? View.VISIBLE : View.GONE;
+
+        getKeyButtonViewById(R.id.dpad_left).setVisibility(visibility);
+        getKeyButtonViewById(R.id.dpad_right).setVisibility(visibility);
+    }
+
+    public void setDpadDarkIntensity(float darkIntensity) {
+        if (showDpadArrowKeys()) {
+            getKeyButtonViewById(R.id.dpad_left).setDarkIntensity(darkIntensity);
+            getKeyButtonViewById(R.id.dpad_right).setDarkIntensity(darkIntensity);
+        }
+    }
+
+    private boolean showDpadArrowKeys() {
+        return Settings.System.getIntForUser(getContext().getContentResolver(),
+                Settings.System.NAVIGATION_BAR_ARROW_KEYS, 0, UserHandle.USER_CURRENT) != 0;
     }
 }
